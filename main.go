@@ -2,10 +2,9 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
-	"strconv"
+	"plan-algorithms/planners"
 	"strings"
 )
 
@@ -15,20 +14,20 @@ func main() {
 
 	fmt.Println("Введите тип планирования (FCFS, SJF, RR, все, all): ")
 
-	typ, err := ReadString(scanner)
+	typ, err := planners.ReadString(scanner)
 	if err != nil {
 		fmt.Println("Ошибка:", err)
 		return
 	}
 
-	if !SliceContains(planTypes, strings.ToLower(typ)) {
+	if !planners.SliceContains(planTypes, strings.ToLower(typ)) {
 		fmt.Println("Неправильный тип")
 		return
 	}
 
 	fmt.Println("Введите количество процессов (3): ")
 
-	processCount, err := ReadInt(scanner)
+	processCount, err := planners.ReadInt(scanner)
 	if err != nil {
 		fmt.Println("Неверный ввод:", err.Error())
 		return
@@ -41,7 +40,7 @@ func main() {
 
 	fmt.Println("Введите максимальное количество квантов (15): ")
 
-	maxQuant, err := ReadInt(scanner)
+	maxQuant, err := planners.ReadInt(scanner)
 	if err != nil {
 		fmt.Println("Неверный ввод:", err.Error())
 		return
@@ -52,93 +51,66 @@ func main() {
 		return
 	}
 
-	planner := NewPlanner(maxQuant, processCount, typ, 0)
-
+	processes := planners.GenerateProcesses(processCount, maxQuant)
+	separator := strings.Repeat("=", planners.GetSeparatorLength(processes))
 	rrQuants := 0
+
 	if strings.ToLower(typ) == "rr" || strings.ToLower(typ) == "все" || strings.ToLower(typ) == "all" {
-		bestQuant, smallestTime := planner.CalcBestQuantAndTimeForRR()
+		bestQuant, smallestTime := planners.CalcBestQuantAndTimeForRR(maxQuant, processes)
+
 		fmt.Println("Самое оптимизированное количество квантов на процесс для RR", bestQuant, "при среднем времени ожидания", smallestTime)
 		fmt.Println("Введите количество квантов на процесс для планирования RR (Round Robin): ")
-		rrQuants, err = ReadInt(scanner)
+
+		rrQuants, err = planners.ReadInt(scanner)
 		if err != nil {
 			fmt.Println("Неверный ввод:", err.Error())
 			return
 		}
+	}
 
-		if maxQuant < 1 {
-			fmt.Println("Количество квантов не может быть меньше 1")
-			return
+	planners_ := []planners.Planner{}
+	switch strings.ToLower(typ) {
+	case "fcfs":
+		planners_ = append(planners_, planners.NewFCFSPlanner())
+	case "rr":
+		planners_ = append(planners_, planners.NewRRPlanner(rrQuants))
+		planners_ = append(planners_, planners.NewRRSJFPlanner(rrQuants))
+	case "sjf":
+		planners_ = append(planners_, planners.NewSJFPlanner())
+	case "все":
+	case "all":
+		planners_ = append(planners_, planners.NewFCFSPlanner())
+		planners_ = append(planners_, planners.NewSJFPlanner())
+		planners_ = append(planners_, planners.NewRRPlanner(rrQuants))
+		planners_ = append(planners_, planners.NewRRSJFPlanner(rrQuants))
+	default:
+		break
+	}
+
+	for _, planner := range planners_ {
+		planner.SetProcesses(processes)
+		planner.GeneratePlans()
+
+		fmt.Println(separator)
+		fmt.Println(strings.ToUpper(planner.GetName()))
+		fmt.Println(separator)
+
+		plans := planner.GetPlans()
+		waitTime := float64(0)
+		runTime := float64(0)
+		for i := 0; i < len(plans); i++ {
+			plans[i].CalcTime()
+
+			waitTime += float64(plans[i].GetWaitTime())
+			runTime += float64(plans[i].GetFullRunTime())
+
+			fmt.Println(fmt.Sprint("P", i, " ", plans[i].GetPlanString(), " waitTime: ", plans[i].GetWaitTime(), " fullRunTime: ", plans[i].GetFullRunTime()))
 		}
+
+		fmt.Println(separator)
+		fmt.Println("full waitTime", waitTime)
+		fmt.Println("avg waitTime", waitTime/float64(len(processes)))
+		fmt.Println("avg runTime", runTime/float64(len(processes)))
+		fmt.Println(separator)
 	}
-
-	planner.SetQuantForRR(rrQuants)
-	planner.GeneratePlan()
-	planner.Plan()
-}
-
-func GetSeparatorLength(plan map[int]int) int {
-	length := 0
-	for _, v := range plan {
-		length += v
-	}
-
-	return length + 3
-}
-
-func calcWaitTime(planString string) float64 {
-	lastPlus := 0
-
-	for i, v := range planString {
-		if v == '+' {
-			lastPlus = i
-		}
-	}
-
-	return float64(strings.Count(planString[0:lastPlus], "-"))
-}
-
-func calcFullRunTime(planString string) float64 {
-	lastPlus := 0
-
-	for i, v := range planString {
-		if v == '+' {
-			lastPlus = i
-		}
-	}
-
-	return float64(lastPlus + 1)
-}
-
-func ReadString(scanner *bufio.Scanner) (string, error) {
-	if !scanner.Scan() {
-		return "", errors.New("")
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	return scanner.Text(), nil
-}
-
-func ReadInt(scanner *bufio.Scanner) (int, error) {
-	if !scanner.Scan() {
-		return 0, errors.New("")
-	}
-
-	if err := scanner.Err(); err != nil {
-		return 0, err
-	}
-
-	return strconv.Atoi(scanner.Text())
-}
-
-func SliceContains(slice []string, str string) bool {
-	for _, v := range slice {
-		if str == v {
-			return true
-		}
-	}
-
-	return false
 }
