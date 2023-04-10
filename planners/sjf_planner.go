@@ -1,6 +1,7 @@
 package planners
 
 import (
+	"math/rand"
 	"plan-algorithms/utils"
 	"sort"
 	"strings"
@@ -32,7 +33,7 @@ func (p *SJFPlanner) SetProcesses(processes map[int]int) {
 	p.processes = processes
 }
 
-func (p *SJFPlanner) GeneratePlans() {
+func (p *SJFPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
 	for key := range p.processes {
 		p.plans[key] = NewPlan("")
 	}

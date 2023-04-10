@@ -1,6 +1,7 @@
 package planners
 
 import (
+	"math/rand"
 	"plan-algorithms/utils"
 	"sort"
 	"strings"
@@ -34,7 +35,7 @@ func (p *RRSJFPlanner) SetProcesses(processes map[int]int) {
 	p.processes = processes
 }
 
-func (p *RRSJFPlanner) GeneratePlans() {
+func (p *RRSJFPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
 	plan := utils.CopyMap(p.processes)
 	maxLen := 0
 

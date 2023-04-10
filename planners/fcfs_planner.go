@@ -1,6 +1,9 @@
 package planners
 
 import (
+	"math/rand"
+	"plan-algorithms/utils"
+	"sort"
 	"strings"
 )
 
@@ -30,20 +33,26 @@ func (p *FCFSPlanner) SetProcesses(processes map[int]int) {
 	p.processes = processes
 }
 
-func (p *FCFSPlanner) GeneratePlans() {
+func (p *FCFSPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
 	for key := range p.processes {
 		p.plans[key] = NewPlan("")
 	}
 
-	for i := 0; i < len(p.processes); i++ {
+	keys := utils.GetAllMapKeys(p.processes)
+
+	sort.SliceStable(keys, func(i, j int) bool {
+		return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
+	})
+
+	for i, key := range keys {
 		for j := 0; j < i; j++ {
-			p.plans[i].PlanString += strings.Repeat("-", p.processes[j])
+			p.plans[key].PlanString += strings.Repeat("-", p.processes[keys[j]])
 		}
 
-		p.plans[i].PlanString += strings.Repeat("+", p.processes[i])
+		p.plans[key].PlanString += strings.Repeat("+", p.processes[key])
 
-		for j := i + 1; j < len(p.processes); j++ {
-			p.plans[i].PlanString += strings.Repeat("-", p.processes[j])
+		for j := i + 1; j < len(keys); j++ {
+			p.plans[key].PlanString += strings.Repeat("-", p.processes[keys[j]])
 		}
 	}
 }

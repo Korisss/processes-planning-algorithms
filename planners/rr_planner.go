@@ -1,6 +1,7 @@
 package planners
 
 import (
+	"math/rand"
 	"plan-algorithms/utils"
 	"sort"
 	"strings"
@@ -34,7 +35,7 @@ func (p *RRPlanner) SetProcesses(processes map[int]int) {
 	p.processes = processes
 }
 
-func (p *RRPlanner) GeneratePlans() {
+func (p *RRPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
 	plan := utils.CopyMap(p.processes)
 	maxLen := 0
 
@@ -45,7 +46,7 @@ func (p *RRPlanner) GeneratePlans() {
 	for len(plan) != 0 {
 		keys := utils.GetAllMapKeys(plan)
 		sort.SliceStable(keys, func(i, j int) bool {
-			return keys[i] < keys[j]
+			return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
 		})
 
 		for _, key := range keys {

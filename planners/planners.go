@@ -12,7 +12,7 @@ import (
 )
 
 type Planner interface {
-	GeneratePlans()
+	GeneratePlans(random *rand.Rand, prioritiesMap map[int]int)
 	GetName() string
 	GetPlans() map[int]*Plan
 	SetProcesses(processes map[int]int)

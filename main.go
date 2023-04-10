@@ -2,15 +2,20 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
+	"math/rand"
 	"os"
 	"plan-algorithms/planners"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
 	planTypes := []string{"fcfs", "rr", "sjf", "все", "all"}
 	scanner := bufio.NewScanner(os.Stdin)
+	random := rand.New(rand.NewSource(time.Now().Unix()))
 
 	fmt.Println("Введите тип планирования (FCFS, SJF, RR, все, all): ")
 
@@ -25,33 +30,104 @@ func main() {
 		return
 	}
 
-	fmt.Println("Введите количество процессов (3): ")
+	maxQuant := 0
+	processes := make(map[int]int)
+	prioritiesMap := make(map[int]int)
+	backedUpFile, err := os.Open("out.csv")
+	imported := false
+	if err == nil {
+		fmt.Print("Был найден сохранённый файл с процессами. Вы хотите его импортировать? y/n (д/н):")
+		readFile, _ := planners.ReadString(scanner)
+		if readFile == "y" || readFile == "д" {
+			imported = true
+			reader := csv.NewReader(backedUpFile)
+			reader.Read()
+			records, err := reader.ReadAll()
+			if err != nil {
+				fmt.Println("Ошибка при парсинге файла:", err.Error())
+				return
+			}
 
-	processCount, err := planners.ReadInt(scanner)
-	if err != nil {
-		fmt.Println("Неверный ввод:", err.Error())
-		return
+			for _, arr := range records {
+				index, err := strconv.Atoi(arr[0])
+				if err != nil {
+					fmt.Println("Ошибка при парсинге файла:", err.Error())
+					return
+				}
+
+				processes[index], err = strconv.Atoi(arr[1])
+				if err != nil {
+					fmt.Println("Ошибка при парсинге файла:", err.Error())
+					return
+				}
+
+				prioritiesMap[index], err = strconv.Atoi(arr[2])
+				if err != nil {
+					fmt.Println("Ошибка при парсинге файла:", err.Error())
+					return
+				}
+
+				if maxQuant < processes[index] {
+					maxQuant = processes[index]
+				}
+			}
+		}
 	}
 
-	if processCount < 1 {
-		fmt.Println("Количество процессов не может быть меньше 1")
-		return
+	if !imported {
+		fmt.Println("Введите количество процессов (3): ")
+
+		processCount, err := planners.ReadInt(scanner)
+		if err != nil {
+			fmt.Println("Неверный ввод:", err.Error())
+			return
+		}
+
+		if processCount < 1 {
+			fmt.Println("Количество процессов не может быть меньше 1")
+			return
+		}
+
+		fmt.Println("Введите максимальное количество квантов (15): ")
+
+		maxQuant, err = planners.ReadInt(scanner)
+		if err != nil {
+			fmt.Println("Неверный ввод:", err.Error())
+			return
+		}
+
+		if maxQuant < 1 {
+			fmt.Println("Количество квантов не может быть меньше 1")
+			return
+		}
+
+		processes = planners.GenerateProcesses(processCount, maxQuant)
+		fmt.Print("Вы хотите использовать приоритеты? y/n (д/н):")
+		priorities, err := planners.ReadString(scanner)
+		if err != nil {
+			fmt.Println("Неверный ввод:", err.Error())
+			return
+		}
+
+		if priorities != "n" && priorities != "y" && priorities != "н" && priorities != "д" {
+			fmt.Println("Неверный ввод.")
+			return
+		}
+
+		usePriorities := false
+		if priorities == "y" || priorities == "д" {
+			usePriorities = true
+		}
+
+		for i := 0; i < processCount; i++ {
+			if usePriorities {
+				prioritiesMap[i] = random.Int()%41 - 20
+			} else {
+				prioritiesMap[i] = 0
+			}
+		}
 	}
 
-	fmt.Println("Введите максимальное количество квантов (15): ")
-
-	maxQuant, err := planners.ReadInt(scanner)
-	if err != nil {
-		fmt.Println("Неверный ввод:", err.Error())
-		return
-	}
-
-	if maxQuant < 1 {
-		fmt.Println("Количество квантов не может быть меньше 1")
-		return
-	}
-
-	processes := planners.GenerateProcesses(processCount, maxQuant)
 	separator := strings.Repeat("=", planners.GetSeparatorLength(processes))
 	rrQuants := 0
 
@@ -89,7 +165,7 @@ func main() {
 
 	for _, planner := range planners_ {
 		planner.SetProcesses(processes)
-		planner.GeneratePlans()
+		planner.GeneratePlans(random, prioritiesMap)
 
 		fmt.Println(separator)
 		fmt.Println(strings.ToUpper(planner.GetName()))
@@ -104,7 +180,7 @@ func main() {
 			waitTime += float64(plans[i].GetWaitTime())
 			runTime += float64(plans[i].GetFullRunTime())
 
-			fmt.Println(fmt.Sprint("P", i, " ", plans[i].GetPlanString(), " waitTime: ", plans[i].GetWaitTime(), " fullRunTime: ", plans[i].GetFullRunTime()))
+			fmt.Println(fmt.Sprint("P", i, " ", plans[i].GetPlanString(), " waitTime: ", plans[i].GetWaitTime(), " fullRunTime: ", plans[i].GetFullRunTime()), "priority", prioritiesMap[i])
 		}
 
 		fmt.Println(separator)
@@ -112,5 +188,39 @@ func main() {
 		fmt.Println("avg waitTime", waitTime/float64(len(processes)))
 		fmt.Println("avg runTime", runTime/float64(len(processes)))
 		fmt.Println(separator)
+	}
+
+	if !imported {
+		fmt.Print("Вы хотите записать процессы в файл? y/n (д/н):")
+		writeFile, err := planners.ReadString(scanner)
+		if err != nil {
+			fmt.Println("Неверный ввод:", err.Error())
+			return
+		}
+
+		if writeFile != "n" && writeFile != "y" && writeFile != "н" && writeFile != "д" {
+			fmt.Println("Неверный ввод.")
+			return
+		}
+
+		if writeFile == "y" || writeFile == "д" {
+			file, err := os.Create("out.csv")
+			if err != nil {
+				fmt.Println("Ошибка при создании файла:", err.Error())
+				return
+			}
+
+			writer := csv.NewWriter(file)
+			writer.Write([]string{"Process", "cpu burst", "priority"})
+			for i, process := range processes {
+				err = writer.Write([]string{strconv.Itoa(i), strconv.Itoa(process), strconv.Itoa(prioritiesMap[i])})
+				if err != nil {
+					fmt.Println("Ошибка при записи в файл:", err.Error())
+					return
+				}
+			}
+
+			writer.Flush()
+		}
 	}
 }
