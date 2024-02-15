@@ -1,4 +1,4 @@
-package utils
+package util
 
 func CopyMap[S map[E]E, E int](originalMap S) S {
 	newMap := make(S, len(originalMap))

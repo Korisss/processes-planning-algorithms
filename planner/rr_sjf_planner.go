@@ -1,42 +1,42 @@
-package planners
+package planner
 
 import (
 	"math/rand"
-	"plan-algorithms/utils"
+	"plan-algorithms/util"
 	"sort"
 	"strings"
 )
 
-type RRPlanner struct {
+type RRSJFPlanner struct {
 	name            string
 	quantCountForRR int
 	plans           map[int]*Plan
 	processes       map[int]int
 }
 
-func NewRRPlanner(quantCountForRR int) *RRPlanner {
-	return &RRPlanner{
-		name:            "rr",
+func NewRRSJFPlanner(quantCountForRR int) *RRSJFPlanner {
+	return &RRSJFPlanner{
+		name:            "rrsjf",
 		plans:           make(map[int]*Plan),
 		processes:       make(map[int]int),
 		quantCountForRR: quantCountForRR,
 	}
 }
 
-func (p *RRPlanner) GetName() string {
+func (p *RRSJFPlanner) GetName() string {
 	return p.name
 }
 
-func (p *RRPlanner) GetPlans() map[int]*Plan {
+func (p *RRSJFPlanner) GetPlans() map[int]*Plan {
 	return p.plans
 }
 
-func (p *RRPlanner) SetProcesses(processes map[int]int) {
+func (p *RRSJFPlanner) SetProcesses(processes map[int]int) {
 	p.processes = processes
 }
 
-func (p *RRPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
-	plan := utils.CopyMap(p.processes)
+func (p *RRSJFPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
+	plan := util.CopyMap(p.processes)
 	maxLen := 0
 
 	for key := range p.processes {
@@ -44,9 +44,9 @@ func (p *RRPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) 
 	}
 
 	for len(plan) != 0 {
-		keys := utils.GetAllMapKeys(plan)
+		keys := util.GetAllMapKeys(plan)
 		sort.SliceStable(keys, func(i, j int) bool {
-			return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
+			return plan[keys[i]] < plan[keys[j]]
 		})
 
 		for _, key := range keys {

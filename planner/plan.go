@@ -1,4 +1,4 @@
-package planners
+package planner
 
 import "strings"
 

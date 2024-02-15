@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"plan-algorithms/planners"
+	"plan-algorithms/planner"
 	"strconv"
 	"strings"
 	"time"
@@ -19,13 +19,13 @@ func main() {
 
 	fmt.Println("Введите тип планирования (FCFS, SJF, RR, все, all): ")
 
-	typ, err := planners.ReadString(scanner)
+	typ, err := planner.ReadString(scanner)
 	if err != nil {
 		fmt.Println("Ошибка:", err)
 		return
 	}
 
-	if !planners.SliceContains(planTypes, strings.ToLower(typ)) {
+	if !planner.SliceContains(planTypes, strings.ToLower(typ)) {
 		fmt.Println("Неправильный тип")
 		return
 	}
@@ -37,7 +37,7 @@ func main() {
 	imported := false
 	if err == nil {
 		fmt.Print("Был найден сохранённый файл с процессами. Вы хотите его импортировать? y/n (д/н):")
-		readFile, _ := planners.ReadString(scanner)
+		readFile, _ := planner.ReadString(scanner)
 		if readFile == "y" || readFile == "д" {
 			imported = true
 			reader := csv.NewReader(backedUpFile)
@@ -77,7 +77,7 @@ func main() {
 	if !imported {
 		fmt.Println("Введите количество процессов (3): ")
 
-		processCount, err := planners.ReadInt(scanner)
+		processCount, err := planner.ReadInt(scanner)
 		if err != nil {
 			fmt.Println("Неверный ввод:", err.Error())
 			return
@@ -90,7 +90,7 @@ func main() {
 
 		fmt.Println("Введите максимальное количество квантов (15): ")
 
-		maxQuant, err = planners.ReadInt(scanner)
+		maxQuant, err = planner.ReadInt(scanner)
 		if err != nil {
 			fmt.Println("Неверный ввод:", err.Error())
 			return
@@ -101,9 +101,15 @@ func main() {
 			return
 		}
 
-		processes = planners.GenerateProcesses(processCount, maxQuant)
+		processes = planner.GenerateProcesses(processCount, maxQuant)
+		maxQuant = 0
+		for _, process := range processes {
+			if process > maxQuant {
+				maxQuant = process
+			}
+		}
 		fmt.Print("Вы хотите использовать приоритеты? y/n (д/н):")
-		priorities, err := planners.ReadString(scanner)
+		priorities, err := planner.ReadString(scanner)
 		if err != nil {
 			fmt.Println("Неверный ввод:", err.Error())
 			return
@@ -128,37 +134,37 @@ func main() {
 		}
 	}
 
-	separator := strings.Repeat("=", planners.GetSeparatorLength(processes))
+	separator := strings.Repeat("=", planner.GetSeparatorLength(processes))
 	rrQuants := 0
 
 	if strings.ToLower(typ) == "rr" || strings.ToLower(typ) == "все" || strings.ToLower(typ) == "all" {
-		bestQuant, smallestTime := planners.CalcBestQuantAndTimeForRR(maxQuant, processes)
+		bestQuant, smallestTime := planner.CalcBestQuantAndTimeForRR(maxQuant, processes)
 
 		fmt.Println("Самое оптимизированное количество квантов на процесс для RR", bestQuant, "при среднем времени ожидания", smallestTime)
 		fmt.Println("Введите количество квантов на процесс для планирования RR (Round Robin): ")
 
-		rrQuants, err = planners.ReadInt(scanner)
+		rrQuants, err = planner.ReadInt(scanner)
 		if err != nil {
 			fmt.Println("Неверный ввод:", err.Error())
 			return
 		}
 	}
 
-	planners_ := []planners.Planner{}
+	planners_ := []planner.Planner{}
 	switch strings.ToLower(typ) {
 	case "fcfs":
-		planners_ = append(planners_, planners.NewFCFSPlanner())
+		planners_ = append(planners_, planner.NewFCFSPlanner())
 	case "rr":
-		planners_ = append(planners_, planners.NewRRPlanner(rrQuants))
-		planners_ = append(planners_, planners.NewRRSJFPlanner(rrQuants))
+		planners_ = append(planners_, planner.NewRRPlanner(rrQuants))
+		planners_ = append(planners_, planner.NewRRSJFPlanner(rrQuants))
 	case "sjf":
-		planners_ = append(planners_, planners.NewSJFPlanner())
+		planners_ = append(planners_, planner.NewSJFPlanner())
 	case "все":
 	case "all":
-		planners_ = append(planners_, planners.NewFCFSPlanner())
-		planners_ = append(planners_, planners.NewSJFPlanner())
-		planners_ = append(planners_, planners.NewRRPlanner(rrQuants))
-		planners_ = append(planners_, planners.NewRRSJFPlanner(rrQuants))
+		planners_ = append(planners_, planner.NewFCFSPlanner())
+		planners_ = append(planners_, planner.NewSJFPlanner())
+		planners_ = append(planners_, planner.NewRRPlanner(rrQuants))
+		planners_ = append(planners_, planner.NewRRSJFPlanner(rrQuants))
 	default:
 		break
 	}
@@ -192,7 +198,7 @@ func main() {
 
 	if !imported {
 		fmt.Print("Вы хотите записать процессы в файл? y/n (д/н):")
-		writeFile, err := planners.ReadString(scanner)
+		writeFile, err := planner.ReadString(scanner)
 		if err != nil {
 			fmt.Println("Неверный ввод:", err.Error())
 			return

@@ -1,47 +1,47 @@
-package planners
+package planner
 
 import (
 	"math/rand"
-	"plan-algorithms/utils"
+	"plan-algorithms/util"
 	"sort"
 	"strings"
 )
 
-type FCFSPlanner struct {
+type SJFPlanner struct {
 	name      string
 	plans     map[int]*Plan
 	processes map[int]int
 }
 
-func NewFCFSPlanner() *FCFSPlanner {
-	return &FCFSPlanner{
-		name:      "fcfs",
+func NewSJFPlanner() *SJFPlanner {
+	return &SJFPlanner{
+		name:      "sjf",
 		plans:     make(map[int]*Plan),
 		processes: make(map[int]int),
 	}
 }
 
-func (p *FCFSPlanner) GetName() string {
+func (p *SJFPlanner) GetName() string {
 	return p.name
 }
 
-func (p *FCFSPlanner) GetPlans() map[int]*Plan {
+func (p *SJFPlanner) GetPlans() map[int]*Plan {
 	return p.plans
 }
 
-func (p *FCFSPlanner) SetProcesses(processes map[int]int) {
+func (p *SJFPlanner) SetProcesses(processes map[int]int) {
 	p.processes = processes
 }
 
-func (p *FCFSPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
+func (p *SJFPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) {
 	for key := range p.processes {
 		p.plans[key] = NewPlan("")
 	}
 
-	keys := utils.GetAllMapKeys(p.processes)
+	keys := util.GetAllMapKeys(p.processes)
 
 	sort.SliceStable(keys, func(i, j int) bool {
-		return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
+		return p.processes[keys[i]] < p.processes[keys[j]]
 	})
 
 	for i, key := range keys {
