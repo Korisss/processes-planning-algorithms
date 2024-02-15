@@ -4,13 +4,47 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
+	"image/color"
 	"math/rand"
 	"os"
 	"plan-algorithms/planner"
 	"strconv"
 	"strings"
 	"time"
+
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 )
+
+func main2() {
+	p := plot.New()
+
+	grid := plotter.NewGrid()
+	p.Add(grid)
+
+	for i := 0.0; i < 20; i++ {
+		var xyer plotter.XYs
+		xyer = append(xyer, plotter.XY{
+			X: rand.Float64() * 200,
+			Y: i,
+		})
+		xyer = append(xyer, plotter.XY{
+			X: rand.Float64() * 200,
+			Y: i,
+		})
+
+		line, _ := plotter.NewLine(xyer)
+		line.Color = color.RGBA{0, 255, 255, 255}
+		line.Width = 15
+		p.Add(line)
+	}
+
+	// scatter, _ := plotter.NewScatter(xyer)
+	// p.Add(scatter)
+
+	p.Save(5*vg.Inch, 5*vg.Inch, "hist.png")
+}
 
 func main() {
 	planTypes := []string{"fcfs", "rr", "sjf", "все", "all"}
@@ -150,34 +184,36 @@ func main() {
 		}
 	}
 
-	planners_ := []planner.Planner{}
+	planners := []planner.Planner{}
 	switch strings.ToLower(typ) {
 	case "fcfs":
-		planners_ = append(planners_, planner.NewFCFSPlanner())
+		planners = append(planners, planner.NewFCFSPlanner())
 	case "rr":
-		planners_ = append(planners_, planner.NewRRPlanner(rrQuants))
-		planners_ = append(planners_, planner.NewRRSJFPlanner(rrQuants))
+		planners = append(planners, planner.NewRRPlanner(rrQuants))
+		planners = append(planners, planner.NewRRSJFPlanner(rrQuants))
 	case "sjf":
-		planners_ = append(planners_, planner.NewSJFPlanner())
+		planners = append(planners, planner.NewSJFPlanner())
 	case "все":
 	case "all":
-		planners_ = append(planners_, planner.NewFCFSPlanner())
-		planners_ = append(planners_, planner.NewSJFPlanner())
-		planners_ = append(planners_, planner.NewRRPlanner(rrQuants))
-		planners_ = append(planners_, planner.NewRRSJFPlanner(rrQuants))
+		planners = append(planners, planner.NewFCFSPlanner())
+		planners = append(planners, planner.NewSJFPlanner())
+		planners = append(planners, planner.NewRRPlanner(rrQuants))
+		planners = append(planners, planner.NewRRSJFPlanner(rrQuants))
 	default:
 		break
 	}
 
-	for _, planner := range planners_ {
-		planner.SetProcesses(processes)
-		planner.GeneratePlans(random, prioritiesMap)
+	for _, p := range planners {
+		p.SetProcesses(processes)
+		p.GeneratePlans(random, prioritiesMap)
+
+		planner.SavePlans(p.GetPlans(), p.GetName())
 
 		fmt.Println(separator)
-		fmt.Println(strings.ToUpper(planner.GetName()))
+		fmt.Println(strings.ToUpper(p.GetName()))
 		fmt.Println(separator)
 
-		plans := planner.GetPlans()
+		plans := p.GetPlans()
 		waitTime := float64(0)
 		runTime := float64(0)
 		for i := 0; i < len(plans); i++ {
