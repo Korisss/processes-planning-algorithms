@@ -40,9 +40,11 @@ func (p *FCFSPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int
 
 	keys := util.GetAllMapKeys(p.processes)
 
-	sort.SliceStable(keys, func(i, j int) bool {
-		return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
-	})
+	if prioritiesMap != nil {
+		sort.SliceStable(keys, func(i, j int) bool {
+			return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
+		})
+	}
 
 	for i, key := range keys {
 		for j := 0; j < i; j++ {

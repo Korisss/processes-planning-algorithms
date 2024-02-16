@@ -44,10 +44,13 @@ func (p *RRSJFPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]in
 	}
 
 	for len(plan) != 0 {
-		keys := util.GetAllMapKeys(plan)
-		sort.SliceStable(keys, func(i, j int) bool {
-			return plan[keys[i]] < plan[keys[j]]
-		})
+		keys := util.GetAllMapKeys(p.processes)
+
+		if prioritiesMap != nil {
+			sort.SliceStable(keys, func(i, j int) bool {
+				return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
+			})
+		}
 
 		for _, key := range keys {
 			quantCount := 0

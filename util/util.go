@@ -1,5 +1,7 @@
 package util
 
+import "slices"
+
 func CopyMap[S map[E]E, E int](originalMap S) S {
 	newMap := make(S, len(originalMap))
 	for i, v := range originalMap {
@@ -14,6 +16,8 @@ func GetAllMapKeys[S map[E]E, E int](originalMap S) []E {
 	for key := range originalMap {
 		keys = append(keys, key)
 	}
+
+	slices.Sort(keys)
 
 	return keys
 }

@@ -4,18 +4,19 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"math/rand"
 	"os"
 	"plan-algorithms/planner"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func main() {
+	openWindow()
+}
+
+func main1() {
 	planTypes := []string{"fcfs", "rr", "rrsjf", "sjf", "все", "all"}
 	scanner := bufio.NewScanner(os.Stdin)
-	random := rand.New(rand.NewSource(time.Now().Unix()))
 
 	fmt.Println("Введите тип планирования (FCFS, SJF, RR, RRSJF, все, all): ")
 
@@ -32,13 +33,14 @@ func main() {
 
 	maxQuant := 0
 	processes := make(map[int]int)
-	prioritiesMap := make(map[int]int)
+	prioritiesMap := map[int]int(nil)
 	backedUpFile, err := os.Open("out.csv")
 	imported := false
 	if err == nil {
 		fmt.Print("Был найден сохранённый файл с процессами. Вы хотите его импортировать? y/n (д/н):")
 		readFile, _ := planner.ReadString(scanner)
 		if readFile == "y" || readFile == "д" {
+			prioritiesMap = make(map[int]int)
 			imported = true
 			reader := csv.NewReader(backedUpFile)
 			reader.Read()
@@ -125,11 +127,10 @@ func main() {
 			usePriorities = true
 		}
 
-		for i := 0; i < processCount; i++ {
-			if usePriorities {
+		if usePriorities {
+			prioritiesMap = make(map[int]int)
+			for i := 0; i < processCount; i++ {
 				prioritiesMap[i] = random.Int()%41 - 20
-			} else {
-				prioritiesMap[i] = 0
 			}
 		}
 	}
@@ -173,6 +174,9 @@ func main() {
 	for _, p := range planners {
 		p.SetProcesses(processes)
 		p.GeneratePlans(random, prioritiesMap)
+		if prioritiesMap == nil {
+			prioritiesMap = make(map[int]int)
+		}
 
 		planner.SavePlans(p.GetPlans(), p.GetName())
 

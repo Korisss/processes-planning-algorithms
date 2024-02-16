@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"fmt"
 	"math/rand"
 	"plan-algorithms/util"
 	"sort"
@@ -44,10 +45,13 @@ func (p *RRPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) 
 	}
 
 	for len(plan) != 0 {
-		keys := util.GetAllMapKeys(plan)
-		sort.SliceStable(keys, func(i, j int) bool {
-			return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
-		})
+		keys := util.GetAllMapKeys(p.processes)
+
+		if prioritiesMap != nil {
+			sort.SliceStable(keys, func(i, j int) bool {
+				return prioritiesMap[keys[i]] > prioritiesMap[keys[j]]
+			})
+		}
 
 		for _, key := range keys {
 			quantCount := 0
@@ -70,11 +74,14 @@ func (p *RRPlanner) GeneratePlans(random *rand.Rand, prioritiesMap map[int]int) 
 				delete(plan, key)
 			}
 
-			maxLen = len(p.plans[key].PlanString)
+			if maxLen < len(p.plans[key].PlanString) {
+				maxLen = len(p.plans[key].PlanString)
+			}
 		}
 	}
 
 	for key := range p.plans {
+		fmt.Println(maxLen, len(p.plans[key].PlanString))
 		p.plans[key].PlanString += strings.Repeat("-", maxLen-len(p.plans[key].PlanString))
 	}
 }
