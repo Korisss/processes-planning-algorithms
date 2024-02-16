@@ -21,15 +21,15 @@ func (p *Plan) CalcTime() {
 	p.waitTime = calcWaitTime(p.PlanString)
 }
 
-func (p *Plan) GetPlanString() string {
+func (p Plan) GetPlanString() string {
 	return p.PlanString
 }
 
-func (p *Plan) GetFullRunTime() int {
+func (p Plan) GetFullRunTime() int {
 	return p.fullRunTime
 }
 
-func (p *Plan) GetWaitTime() int {
+func (p Plan) GetWaitTime() int {
 	return p.waitTime
 }
 

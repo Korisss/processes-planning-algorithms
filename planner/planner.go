@@ -3,9 +3,9 @@ package planner
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"image/color"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -25,14 +25,19 @@ type Planner interface {
 func SavePlans(plans map[int]*Plan, label string) {
 	p := plot.New()
 	p.Title.Text = strings.ToUpper(label)
-	p.X.Label.TextStyle.Font.Size = 500
+
+	grid := plotter.NewGrid()
+	p.Add(grid)
 
 	for planNum, plan := range plans {
-		fmt.Println(123)
 		str := plan.PlanString
 		start, end := -1, -1
 		for i := 0; i < len(str); i++ {
-			if start != -1 && end != -1 && str[i] == '-' {
+			if i == len(str)-2 {
+				end = len(str) - 1
+			}
+
+			if start != -1 && end != -1 && (end == len(str)-1 || str[i] == '-') {
 				xyer := plotter.XYs{
 					{
 						X: float64(start),
@@ -51,9 +56,7 @@ func SavePlans(plans map[int]*Plan, label string) {
 
 				start = -1
 				end = -1
-			}
-
-			if str[i] == '+' {
+			} else if str[i] == '+' {
 				if start == -1 {
 					start = i
 				}
@@ -61,9 +64,6 @@ func SavePlans(plans map[int]*Plan, label string) {
 			}
 		}
 	}
-
-	grid := plotter.NewGrid()
-	p.Add(grid)
 
 	tf := plot.TickerFunc(func(min, max float64) []plot.Tick {
 		ticks := make([]plot.Tick, int(max-min))
@@ -73,14 +73,11 @@ func SavePlans(plans map[int]*Plan, label string) {
 		return ticks
 	})
 
-	// if int(ticks[int(i-min)].Value)%2 != 0 {
-	// 	ticks[int(i-min)].Label = ""
-	// }
-
 	p.X.Tick.Marker = tf
 	p.Y.Tick.Marker = tf
 
-	p.Save(vg.Inch*10, vg.Inch*5, label+".png")
+	os.Mkdir("./out", 0644)
+	p.Save(vg.Inch*10, vg.Inch*5, "./out/"+label+".png")
 }
 
 func GenerateProcesses(processCount, maxQuantCountPerProcess int) map[int]int {

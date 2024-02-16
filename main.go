@@ -4,54 +4,20 @@ import (
 	"bufio"
 	"encoding/csv"
 	"fmt"
-	"image/color"
 	"math/rand"
 	"os"
 	"plan-algorithms/planner"
 	"strconv"
 	"strings"
 	"time"
-
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/vg"
 )
 
-func main2() {
-	p := plot.New()
-
-	grid := plotter.NewGrid()
-	p.Add(grid)
-
-	for i := 0.0; i < 20; i++ {
-		var xyer plotter.XYs
-		xyer = append(xyer, plotter.XY{
-			X: rand.Float64() * 200,
-			Y: i,
-		})
-		xyer = append(xyer, plotter.XY{
-			X: rand.Float64() * 200,
-			Y: i,
-		})
-
-		line, _ := plotter.NewLine(xyer)
-		line.Color = color.RGBA{0, 255, 255, 255}
-		line.Width = 15
-		p.Add(line)
-	}
-
-	// scatter, _ := plotter.NewScatter(xyer)
-	// p.Add(scatter)
-
-	p.Save(5*vg.Inch, 5*vg.Inch, "hist.png")
-}
-
 func main() {
-	planTypes := []string{"fcfs", "rr", "sjf", "все", "all"}
+	planTypes := []string{"fcfs", "rr", "rrsjf", "sjf", "все", "all"}
 	scanner := bufio.NewScanner(os.Stdin)
 	random := rand.New(rand.NewSource(time.Now().Unix()))
 
-	fmt.Println("Введите тип планирования (FCFS, SJF, RR, все, all): ")
+	fmt.Println("Введите тип планирования (FCFS, SJF, RR, RRSJF, все, all): ")
 
 	typ, err := planner.ReadString(scanner)
 	if err != nil {
@@ -171,7 +137,7 @@ func main() {
 	separator := strings.Repeat("=", planner.GetSeparatorLength(processes))
 	rrQuants := 0
 
-	if strings.ToLower(typ) == "rr" || strings.ToLower(typ) == "все" || strings.ToLower(typ) == "all" {
+	if strings.ToLower(typ) == "rr" || strings.ToLower(typ) == "rrsjf" || strings.ToLower(typ) == "все" || strings.ToLower(typ) == "all" {
 		bestQuant, smallestTime := planner.CalcBestQuantAndTimeForRR(maxQuant, processes)
 
 		fmt.Println("Самое оптимизированное количество квантов на процесс для RR", bestQuant, "при среднем времени ожидания", smallestTime)
@@ -190,6 +156,7 @@ func main() {
 		planners = append(planners, planner.NewFCFSPlanner())
 	case "rr":
 		planners = append(planners, planner.NewRRPlanner(rrQuants))
+	case "rrsjf":
 		planners = append(planners, planner.NewRRSJFPlanner(rrQuants))
 	case "sjf":
 		planners = append(planners, planner.NewSJFPlanner())
