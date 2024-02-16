@@ -1,4 +1,4 @@
 *.csv
 *.exe
 *.syso
-./out/
+out
